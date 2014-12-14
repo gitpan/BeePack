@@ -3,8 +3,26 @@ Changes from 1741-03-01 00:00:00 +0000 to present.
 ==================================================
 
 ------------------------------------------
-version 0.001 at 2014-12-14 01:50:48 +0000
+version 0.002 at 2014-12-14 02:01:32 +0000
 ------------------------------------------
+
+  Change: 8edac616e0536c88d5436b6c01b7941198d5af85
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-14 03:01:26 +0000
+
+    Fixed rights 
+
+  Change: 27f6d202c5390d8826bd9e3732ac322b41e54aab
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-14 03:01:09 +0000
+
+    A bit documentation for bee 
+
+  Change: 8e55c0eaf66457b07974248e7d881fd996ee3d76
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-14 02:58:50 +0000
+
+    Made bee giving out raw value for piping 
 
   Change: a648b6de0b14427deb774d118cebf77e5f8c1fbf
   Author: Torsten Raudssus <torsten@raudss.us>

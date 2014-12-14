@@ -26,7 +26,6 @@
       },
       "runtime" : {
          "requires" : {
-            "Data::Coloured" : "0",
             "Data::MessagePack" : "0",
             "Data::MessagePack::Stream" : "0",
             "Path::Tiny" : "0"
@@ -47,7 +46,7 @@
          "web" : "https://github.com/vonBienenstock/p5-beepack"
       }
    },
-   "version" : "0.001",
+   "version" : "0.002",
    "x_Dist_Zilla" : {
       "perl" : {
          "version" : "5.018001"
@@ -372,7 +371,7 @@
                "Dist::Zilla::Plugin::Git::Tag" : {
                   "branch" : null,
                   "signed" : 0,
-                  "tag" : "0.001",
+                  "tag" : "0.002",
                   "tag_format" : "%v",
                   "tag_message" : "v%v",
                   "time_zone" : "local"

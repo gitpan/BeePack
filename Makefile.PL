@@ -22,7 +22,6 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "BeePack",
   "PREREQ_PM" => {
-    "Data::Coloured" => 0,
     "Data::MessagePack" => 0,
     "Data::MessagePack::Stream" => 0,
     "Path::Tiny" => 0
@@ -30,7 +29,7 @@ my %WriteMakefileArgs = (
   "TEST_REQUIRES" => {
     "Test::More" => "0.96"
   },
-  "VERSION" => "0.001",
+  "VERSION" => "0.002",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -38,7 +37,6 @@ my %WriteMakefileArgs = (
 
 
 my %FallbackPrereqs = (
-  "Data::Coloured" => 0,
   "Data::MessagePack" => 0,
   "Data::MessagePack::Stream" => 0,
   "ExtUtils::MakeMaker" => 0,

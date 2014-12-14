@@ -6,7 +6,6 @@ use strict;
 use warnings;
 use Path::Tiny;
 use BeePack qw( beepack bunpack );
-use DDC;
 
 my $filename = shift @ARGV;
 my %data = bunpack(scalar path($filename)->slurp_raw);
@@ -14,7 +13,7 @@ my %data = bunpack(scalar path($filename)->slurp_raw);
 my $dump_key = shift @ARGV;
 
 if ($dump_key) {
-  pc($data{$dump_key});
+  print $data{$dump_key};
 } else {
   my $all = 0;
   my $count = 0;
@@ -38,11 +37,16 @@ bee - Small application to handle bee files
 
 =head1 VERSION
 
-version 0.001
+version 0.002
 
 =head1 SYNOPSIS
 
+  # To get all keys
   $ bee test.bee
+
+  # To print one key (after deparsing via Data::MessagePack::Stream)
+  $ bee test.bee sample_key
+  $ bee test.bee gzipped_sample_value | gunzip -c
 
 =head1 DESCRIPTION
 

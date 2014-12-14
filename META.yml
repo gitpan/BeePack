@@ -14,14 +14,13 @@ meta-spec:
   version: '1.4'
 name: BeePack
 requires:
-  Data::Coloured: '0'
   Data::MessagePack: '0'
   Data::MessagePack::Stream: '0'
   Path::Tiny: '0'
 resources:
   homepage: https://github.com/vonBienenstock/p5-beepack
   repository: https://github.com/vonBienenstock/p5-beepack.git
-version: '0.001'
+version: '0.002'
 x_Dist_Zilla:
   perl:
     version: '5.018001'
@@ -274,7 +273,7 @@ x_Dist_Zilla:
         Dist::Zilla::Plugin::Git::Tag:
           branch: ~
           signed: 0
-          tag: '0.001'
+          tag: '0.002'
           tag_format: '%v'
           tag_message: v%v
           time_zone: local
