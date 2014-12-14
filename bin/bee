@@ -1,0 +1,75 @@
+#!/usr/bin/env perl
+# PODNAME: bee
+# ABSTRACT: Small application to handle bee files
+
+use strict;
+use warnings;
+use Path::Tiny;
+use BeePack qw( beepack bunpack );
+use DDC;
+
+my $filename = shift @ARGV;
+my %data = bunpack(scalar path($filename)->slurp_raw);
+
+my $dump_key = shift @ARGV;
+
+if ($dump_key) {
+  pc($data{$dump_key});
+} else {
+  my $all = 0;
+  my $count = 0;
+  for my $key (sort { $a cmp $b } keys %data) {
+    my $size = length($data{$key});
+    $all += $size;
+    $count += 1;
+    printf("% 8d | %s\n",$size,$key);
+  }
+  print(('-' x 9).'+'.('-' x 20)."\n");
+  printf("% 8d | %d %s\n",$all,$count,$count == 1 ? 'entry' : 'entries');
+}
+
+__END__
+
+=pod
+
+=head1 NAME
+
+bee - Small application to handle bee files
+
+=head1 VERSION
+
+version 0.001
+
+=head1 SYNOPSIS
+
+  $ bee test.bee
+
+=head1 DESCRIPTION
+
+=head1 SUPPORT
+
+IRC
+
+  Join #vonbienenstock on irc.freenode.net. Highlight Getty for fast reaction :).
+
+Repository
+
+  http://github.com/Getty/p5-app-tcpproxy
+  Pull request and additional contributors are welcome
+
+Issue Tracker
+
+  http://github.com/Getty/p5-app-tcpproxy/issues
+
+=head1 AUTHOR
+
+Torsten Raudssus <torsten@raudss.us>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2014 by Torsten Raudssus.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
