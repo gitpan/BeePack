@@ -3,7 +3,7 @@ BEGIN {
   $BeePack::AUTHORITY = 'cpan:GETTY';
 }
 # ABSTRACT: Primitive MsgPack based key value storage
-$BeePack::VERSION = '0.101';
+$BeePack::VERSION = '0.102';
 use Moo;
 use bytes;
 use CDB::TinyCDB;
@@ -49,7 +49,7 @@ has nil_exists => (
   is => 'lazy',
 );
 
-sub _build_nil_exists { 1 }
+sub _build_nil_exists { 0 }
 
 has readonly => (
   is => 'lazy',
@@ -65,9 +65,7 @@ has data_messagepack => (
   init_arg => undef,
 );
 
-sub _build_data_messagepack {
-  Data::MessagePack->new->canonical->utf8
-}
+sub _build_data_messagepack { Data::MessagePack->new->canonical->utf8 }
 
 sub BUILD {
   my ( $self ) = @_;
@@ -87,13 +85,18 @@ sub open {
 
 sub set {
   my ( $self, $key, $value ) = @_;
-  croak("Trying to set on readonly BeePack") if $self->readonly;
+  $self->readonly_check;
   $self->cdb->put_replace($key,$self->data_messagepack->pack($value));
+}
+
+sub readonly_check {
+  my ( $self ) = @_;  
+  croak("Trying to set on readonly BeePack") if $self->readonly;
 }
 
 sub set_type {
   my ( $self, $key, $type, $value ) = @_;
-  croak("Trying to set on readonly BeePack") if $self->readonly;
+  $self->readonly_check;
   my $t = defined $type ? substr($type,0,1) : '';
   if ($t eq 'i') {
     $self->set_integer($key,$value);
@@ -140,6 +143,7 @@ sub set_nil {
 sub exists {
   my ( $self, $key ) = @_;
   return 0 unless $self->cdb->exists($key);
+  return $self->cdb->exists($key) if $self->nil_exists;
   my $msgpack = $self->cdb->get($key);
   my $value = $self->data_messagepack->unpack($msgpack);
   return defined $value ? 1 : 0;
@@ -178,7 +182,7 @@ BeePack - Primitive MsgPack based key value storage
 
 =head1 VERSION
 
-version 0.101
+version 0.102
 
 =head1 SYNOPSIS
 
@@ -187,26 +191,38 @@ version 0.101
   # read only opening, error if fail
   my $beepack_ro = BeePack->open('my.bee');
   # read/write opening (with temp file), create if missing
-  my $beepack_rw = BeePack->open('my.bee','my.bee.'.$$);
+  my $beepack_rw = BeePack->open('my.bee', 'my.bee.'.$$);
+  # read only opening with nil_exists set
+  my $beepack_ro = BeePack->open('my.bee', undef, nil_exists => 1 );
 
   $beepack_rw->set( key => $value ); # overwrite value
 
-  $beepack_rw->set_integer( key => $value ); # force integer
-  $beepack_rw->set_bool( key => $value ); # force bool
-  $beepack_rw->set_string( key => $value ); # force stringification
-  $beepack_rw->set_nil( 'key' ); # set nil value
+  $beepack_rw->set_integer( key => $value );   # force integer
+  $beepack_rw->set_type( key => i => $value ); # alternative way
+  $beepack_rw->set_bool( key => $value );      # force bool
+  $beepack_rw->set_type( key => b => $value ); # alternative way
+  $beepack_rw->set_string( key => $value );    # force stringification
+  $beepack_rw->set_type( key => s => $value ); # alternative way
+  $beepack_rw->set_nil( 'key' );       # set nil value
+  $beepack_rw->set_type( key => 'n' ); # alternative way
 
+  # array of 2 true bool
   $beepack_rw->set( key => [
     BeePack->true, BeePack->true,
-  ]); # array of 2 true bool
+  ]);
+
+  # hash with true and false bool
   $beepack_rw->set( key => {
     false => BeePack->false,
     true => BeePack->true,
-  }); # hash with true and false bool
+  });
 
   $beepack_rw->save; # save changes and reopen
 
   my $value = $beepack_ro->get('key');
+
+  # getting the raw msgpack bytes
+  my $msgpack = $beepack_ro->get_raw('key');
 
 =head1 DESCRIPTION
 
@@ -214,15 +230,29 @@ B<BeePack> is made out of the requirement to encapsule small key values and
 giant binary blobs into a compact file format for exchange and easy update
 even with the low amount of microcontroller memory.
 
-Technical B<BeePack> is B<CDB> which uses B<MsgPack> for storing the values.
-We picked B<MsgPack> for the inner storage, to not reinvent the wheel of
-storing interoperational values (like B<BeePack> generated on a Linux machine
-with x86 while being read by a microcontroller with ARM).
+Technical B<BeePack> is B<CDB> with additionally using B<MsgPack> for storing
+the values inside the B<CDB>. We picked B<MsgPack> for the inner storage, to not
+reinvent the wheel of storing interoperational values (like B<BeePack> generated
+on a Linux machine with x86 while being read by a microcontroller with ARM).
 
 For simplification we do NOT store several values for a key inside the B<CDB>,
-which is a capability of B<CDB>
+which is a capability of B<CDB>. By default B<BeePack> is saying a key that has a
+nil value doesn't exist. You can deactivate this behaviour by setting the
+B<nil_exists> attribute to B<1> on B<open>.
+
+We also simplify the implementation of B<MsgPack> inside the B<BeePack> with
+not allowing specific types in there. Because of the usage of L<Data::MessagePack>
+this implementation will still flawless read them, while all types we are
+excluding are also those you can't get out of L<Data::MessagePack>, so the Perl
+implementation is anyway not capable of adding them to the B<BeePack>. The C
+implementation will be getting strict on this.
+
+This distribution includes L<bee>, which is a little tool to read, generate and
+manipulate B<BeePack> from the comandline.
 
 =head1 SEE ALSO
+
+=head2 L<bee>
 
 =head2 L<CDB::TinyCDB>
 

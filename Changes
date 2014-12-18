@@ -3,8 +3,32 @@ Changes from 1741-03-05 00:00:00 +0000 to present.
 ==================================================
 
 ------------------------------------------
-version 0.101 at 2014-12-18 03:08:28 +0000
+version 0.102 at 2014-12-18 03:39:05 +0000
 ------------------------------------------
+
+  Change: bd2942ab0ab32f5deed7d0dbd4faa4deb272c1d5
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-18 04:37:52 +0000
+
+    Aehm, should document it PROPER.... 
+
+  Change: 38f593829195563b82f6a6c2a49159007129fcf4
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-18 04:36:58 +0000
+
+    Implemented nil_exists proper and documented it 
+
+  Change: 1e2b6ed7b3015fe4ddf8b7870eb1e9ccea62d409
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-18 04:20:26 +0000
+
+    More documentation more organization in the code 
+
+  Change: 36b809960a58cdf772256d37df0bd1569a2229ec
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-18 04:13:22 +0000
+
+    More documentation about what it is 
 
   Change: 5d72c698a81997e9a6eb75c7d880b93cc14ac8ea
   Author: Torsten Raudssus <torsten@raudss.us>

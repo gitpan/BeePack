@@ -36,6 +36,7 @@ my $tempfile = tmpnam();
   is($beepack_ro->get('nil'),undef,'Reading nil');
   is_deeply($beepack_ro->get('array'),[qw( 1 2 3 )],'Reading array');
   is_deeply($beepack_ro->get('hash'),{qw( 1 a 2 b 3 c )},'Reading hash');
+  is($beepack_ro->exists('nil') ? 1 : 0,0,"nil value doesn't exists");
 
   eval {
     $beepack_ro->set( string => 'Readonly!' );
@@ -58,10 +59,11 @@ my $tempfile = tmpnam();
 }
 
 {
-  my $beepack_ro2 = BeePack->open($dbfile);
+  my $beepack_ro2 = BeePack->open($dbfile,undef, nil_exists => 1 );
 
   isa_ok($beepack_ro2,'BeePack','$beepack_ro2');
 
+  is($beepack_ro2->exists('nil') ? 1 : 0,1,"nil value does exists with nil_exists = 1");
   is($beepack_ro2->get('integer'),24,'Reading changed integer');
   is($beepack_ro2->get('bool') ? 1 : 0,0,'Reading changed bool');
   is($beepack_ro2->get('string'),"This is another text",'Reading changed string');
