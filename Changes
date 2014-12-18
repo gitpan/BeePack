@@ -3,8 +3,26 @@ Changes from 1741-03-05 00:00:00 +0000 to present.
 ==================================================
 
 ------------------------------------------
-version 0.100 at 2014-12-18 02:35:58 +0000
+version 0.101 at 2014-12-18 03:08:28 +0000
 ------------------------------------------
+
+  Change: 5d72c698a81997e9a6eb75c7d880b93cc14ac8ea
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-18 04:08:24 +0000
+
+    Hups 
+
+  Change: 29d21b0aa299631dad0138420efceb558689e60f
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-18 04:07:36 +0000
+
+    No prefer_integer!!!! 
+
+  Change: a78980c82eff86c9818856081abf99e485794701
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-18 03:41:34 +0000
+
+    Fix for travis 
 
   Change: 62e572dd2e6e0c7c61168e8aa3abe50706f5da1a
   Author: Torsten Raudssus <torsten@raudss.us>
