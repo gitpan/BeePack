@@ -1,10 +1,29 @@
 ==================================================
-Changes from 1741-03-01 00:00:00 +0000 to present.
+Changes from 1741-03-05 00:00:00 +0000 to present.
 ==================================================
 
 ------------------------------------------
-version 0.002 at 2014-12-14 02:01:32 +0000
+version 0.100 at 2014-12-18 02:35:58 +0000
 ------------------------------------------
+
+  Change: 62e572dd2e6e0c7c61168e8aa3abe50706f5da1a
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-18 03:35:17 +0000
+
+    Made bee tool for accessing beepacks, requirements tuning, release
+    ready 
+
+  Change: 1c1abc84e4abeee57b86a8455268db5203c294ff
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-18 02:54:32 +0000
+
+    BeePack is now something completly different..... (CDB+MsgPack) 
+
+  Change: 5ccb512967f09b2fa6a0c801a2769e829e421ffe
+  Author: Torsten Raudssus <torsten@raudss.us>
+  Date : 2014-12-14 04:25:31 +0000
+
+    Hups, fix in doc 
 
   Change: 8edac616e0536c88d5436b6c01b7941198d5af85
   Author: Torsten Raudssus <torsten@raudss.us>

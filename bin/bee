@@ -4,28 +4,61 @@
 
 use strict;
 use warnings;
-use Path::Tiny;
-use BeePack qw( beepack bunpack );
+use Carp qw( croak );
+use BeePack;
+use File::Temp qw/ tmpnam /;
+use Data::Dumper;
 
-my $filename = shift @ARGV;
-my %data = bunpack(scalar path($filename)->slurp_raw);
+my $beepack = shift @ARGV;
 
-my $dump_key = shift @ARGV;
+my $key = shift @ARGV;
+my $type = shift @ARGV;
+my @values = @ARGV;
+my $tmpfile = tmpnam();
+my @args = ( $beepack, defined $type ? ( $tmpfile ) : () );
+my $bee = BeePack->open(@args);
 
-if ($dump_key) {
-  print $data{$dump_key};
-} else {
-  my $all = 0;
-  my $count = 0;
-  for my $key (sort { $a cmp $b } keys %data) {
-    my $size = length($data{$key});
-    $all += $size;
-    $count += 1;
-    printf("% 8d | %s\n",$size,$key);
+if (defined $key) {
+  if (defined $type) {
+    if ($type =~ m/^n/) {
+      croak("nil type can't have a value") if scalar @values > 0;
+      $bee->set_nil($key);
+    } elsif ($type =~ m/^i/) {
+      croak("integer can only handle one value") if scalar @values > 1;
+      $bee->set_integer($key,$values[0]);
+    } elsif ($type =~ m/^s/) {
+      croak("string can only handle one value") if scalar @values > 1;
+      $bee->set_string($key,$values[0]);
+    } elsif ($type =~ m/^b/) {
+      croak("bool can only handle one value") if scalar @values > 1;
+      $bee->set_bool($key,$values[0]);
+    } elsif ($type =~ m/^a/) {
+      $bee->set($key,\@values);
+    } elsif ($type =~ m/^h/) {
+      croak("hash needs even number") if scalar @values % 2;
+      $bee->set($key,{ @values });
+    } else {
+      croak("Unknown type ".$type);
+    }
+    $bee->save;
+  } else {
+    my $val = $bee->get($key);
+    if (defined $val) {
+      my $ref = ref $val;
+      if ($ref eq 'ARRAY' || $ref eq 'HASH') {
+        print Dumper $val;
+      } else {
+        print $val;
+      }
+    }
   }
-  print(('-' x 9).'+'.('-' x 20)."\n");
-  printf("% 8d | %d %s\n",$all,$count,$count == 1 ? 'entry' : 'entries');
+} else {
+  for ($bee->keys) {
+    print $_."\n";
+  }
 }
+
+exit 0;
 
 __END__
 
@@ -37,33 +70,61 @@ bee - Small application to handle bee files
 
 =head1 VERSION
 
-version 0.002
+version 0.100
 
 =head1 SYNOPSIS
 
-  # To get all keys
+  # show keys
   $ bee test.bee
 
-  # To print one key (after deparsing via Data::MessagePack::Stream)
-  $ bee test.bee sample_key
-  $ bee test.bee gzipped_sample_value | gunzip -c
+  # get key
+  # integer displays as ascii numbers
+  # bool displays as true or false
+  # nil value is not displayed
+  # arrays and hashs are displayed as Data::Dumper dump
+  $ bee test.bee key
 
-=head1 DESCRIPTION
+  # sample complex key, no need for escaping
+  $ bee test.bee web#img/background.jpg#content
+
+  # get is transparent on string
+  $ bee test.bee gzipped_value | gunzip -c
+
+  # set key to nil
+  $ bee test.bee key n
+
+  # set bool key
+  $ bee test.bee key b 0
+
+  # set integer key
+  $ bee test.bee key i 123
+
+  # set string key
+  $ bee test.bee key s "This is a test"
+
+  # set array key
+  $ bee test.bee key a "Peter Parker" "Bruce Banner" "Clark Jerome Kent"
+
+  # set hash key
+  $ bee test.bee key h \
+    spiderman "Peter Parker" \
+    hulk "Bruce Banner" \
+    superman "Clark Jerome Kent"
 
 =head1 SUPPORT
 
 IRC
 
-  Join #vonbienenstock on irc.freenode.net. Highlight Getty for fast reaction :).
+  Join #vonBienenstock on irc.freenode.net. Highlight Getty for fast reaction :).
 
 Repository
 
-  http://github.com/Getty/p5-app-tcpproxy
+  http://github.com/Getty/p5-beepack
   Pull request and additional contributors are welcome
 
 Issue Tracker
 
-  http://github.com/Getty/p5-app-tcpproxy/issues
+  http://github.com/Getty/p5-beepack/issues
 
 =head1 AUTHOR
 

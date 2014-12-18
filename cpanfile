@@ -1,8 +1,9 @@
 
-requires 'Data::MessagePack', '0';
-requires 'Data::MessagePack::Stream', '0';
-requires 'Path::Tiny', '0';
+requires 'CDB::TinyCDB', '0.05';
+requires 'Data::MessagePack', '0.48';
+requires 'Moo', '1.006001';
+requires 'File::Temp', '0.2304';
 
 on test => sub {
-  requires 'Test::More', '0.96';
+  requires 'Test::More', '1.001009';
 };

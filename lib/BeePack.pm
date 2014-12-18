@@ -3,91 +3,144 @@ BEGIN {
   $BeePack::AUTHORITY = 'cpan:GETTY';
 }
 # ABSTRACT: Primitive MsgPack based key value storage
-$BeePack::VERSION = '0.002';
-use strict;
-use warnings;
-use Data::MessagePack;
-use Data::MessagePack::Stream;
-use Carp qw( croak );
+$BeePack::VERSION = '0.100';
+use Moo;
 use bytes;
-use Exporter 'import';
+use CDB::TinyCDB;
+use Data::MessagePack;
+use Carp qw( croak );
 
-our @EXPORT_OK = qw( beepack bunpack );
+sub true { Data::MessagePack::true() }
+sub false { Data::MessagePack::false() }
 
-sub beepack {
-  my ( %data ) = @_;
-  my $header_size = _header_size(%data);
-  my @keys = sort { $a cmp $b } keys %data;
-  my $pack = '';
-  my %startbyte;
-  for my $key (@keys) {
-    $startbyte{$key} = $header_size + length($pack) + 1;
-    $pack .= Data::MessagePack->pack($data{$key});
-  }
-  my $header = _fixmap_header(%data);
-  for my $key (@keys) {
-    $header .= _fixstr($key);
-    $header .= _uint32($startbyte{$key});
-  }
-  return $header.$pack;
+# currently workaround to be reset
+has cdb => (
+  is => 'rw',
+  lazy => 1,
+  builder => 1,
+  init_arg => undef,
+  handles => [qw(
+    keys
+  )],
+);
+
+sub _build_cdb {
+  my ( $self ) = @_;
+  return -f $self->filename
+    ? CDB::TinyCDB->open($self->filename, $self->has_tempfile ? (
+        for_update => $self->tempfile
+      ) : ())
+    : $self->readonly
+      ? croak("Can't open non-existing readonly database ".$self->filename)
+      : CDB::TinyCDB->create($self->filename,$self->tempfile);
 }
 
-sub _header_size {
-  my ( %data ) = @_;
-  my $value_length = length(_uint32(0));
-  my $header = _fixmap_header(%data);
-  my @keys = keys %data;
-  my $length = length($header);
-  for my $key (@keys) {
-    $length += length(_fixstr($key));
-    $length += $value_length;
-  }
-  return $length;
+has filename => (
+  is => 'ro',
+  required => 1,
+);
+
+has tempfile => (
+  is => 'ro',
+  predicate => 1,
+);
+
+has nil_exists => (
+  is => 'lazy',
+);
+
+sub _build_nil_exists { 1 }
+
+has readonly => (
+  is => 'lazy',
+);
+
+sub _build_readonly {
+  my ( $self ) = @_;
+  return $self->has_tempfile ? 0 : 1;
 }
 
-sub _fixstr {
-  my ( $string ) = @_;
-  return Data::MessagePack->pack("$string");
+has data_messagepack => (
+  is => 'lazy',
+  init_arg => undef,
+);
+
+sub _build_data_messagepack {
+  Data::MessagePack->new->canonical->utf8->prefer_integer
 }
 
-sub _uint32 {
-  my ( $num ) = @_;
-  return pack('CN', 0xce, $num);
+sub BUILD {
+  my ( $self ) = @_;
+  croak("Read/Write opening requires tempfile") if !$self->readonly && !$self->has_tempfile;
+  $self->cdb;
+  $self->data_messagepack;
 }
 
-sub _fixmap_header {
-  my ( %data ) = @_;
-  my $num = keys %data;
-  return 
-      $num < 16          ? pack( 'C',  0x80 + $num )
-    : $num < 2 ** 16 - 1 ? pack( 'Cn', 0xde,  $num )
-    : $num < 2 ** 32 - 1 ? pack( 'CN', 0xdf,  $num )
-    : croak("Unexpected key count %d", $num);
+sub open {
+  my ( $class, $filename, $tempfile, %attr ) = @_;
+  return $class->new(
+    filename => $filename,
+    defined $tempfile ? ( tempfile => $tempfile ) : (),
+    %attr,
+  );
 }
 
-sub bunpack {
-  my ( $pack ) = @_;
-  open(my $io,'<',\$pack);
-  my $header = _find_msgpack($io);
-  return map {
-    $_, _find_msgpack($io,$header->{$_})
-  } keys %{$header};
+sub set {
+  my ( $self, $key, $value ) = @_;
+  croak("Trying to set on readonly BeePack ".$self->filename) if $self->readonly;
+  $self->cdb->put_replace($key,$self->data_messagepack->pack($value));
 }
 
-our $BEEPACK_FIND_BLOCKSIZE = 512;
+sub set_integer {
+  my ( $self, $key, $value ) = @_;
+  $self->set($key, 0 + $value);
+}
 
-sub _find_msgpack {
-  my ( $io, $start ) = @_;
-  $start = 1 unless $start;
-  my $pos = $start - 1;
-  seek($io,$pos,0);
-  my $unpacker = Data::MessagePack::Stream->new;
-  until ($unpacker->next) {
-    croak("No MsgPack found") unless read($io, my $buf, $BEEPACK_FIND_BLOCKSIZE);
-    $unpacker->feed($buf);
-  }
-  my $data = $unpacker->data;
-  return $data;
+sub set_bool {
+  my ( $self, $key, $value ) = @_;
+  $self->set($key, $value
+    ? Data::MessagePack::true()
+    : Data::MessagePack::false()
+  );
+}
+
+sub set_string {
+  my ( $self, $key, $value ) = @_;
+  $self->set($key, "$value");
+}
+
+sub set_nil {
+  my ( $self, $key ) = @_;
+  $self->set($key, undef);
+}
+
+sub exists {
+  my ( $self, $key ) = @_;
+  return 0 unless $self->cdb->exists($key);
+  my $msgpack = $self->cdb->get($key);
+  my $value = $self->data_messagepack->unpack($msgpack);
+  return defined $value ? 1 : 0;
+}
+
+sub get {
+  my ( $self, $key ) = @_;
+  return undef unless $self->exists($key);
+  return $self->data_messagepack->unpack(scalar $self->cdb->get($key));
+}
+
+sub get_raw {
+  my ( $self, $key ) = @_;
+  return scalar $self->cdb->get($key);
+}
+
+sub save {
+  my ( $self ) = @_;
+  croak("Trying to save readonly CDB ".$self->filename) if $self->readonly;
+  $self->cdb->finish( save_changes => 1, reopen => 0 );
+  # Bug in CDB::TinyCDB? reopen => 1 is not reopening
+  $self->cdb(undef);
+  $self->cdb($self->_build_cdb);
+  return 1;
 }
 
 1;
@@ -102,19 +155,55 @@ BeePack - Primitive MsgPack based key value storage
 
 =head1 VERSION
 
-version 0.002
+version 0.100
 
 =head1 SYNOPSIS
 
-  use BeePack qw( beepack bunpack );
+  use BeePack;
 
-  my $beepack = beepack( key => 'value', other_key => 23 );
+  # read only opening, error if fail
+  my $beepack_ro = BeePack->open('my.bee');
+  # read/write opening (with temp file), create if missing
+  my $beepack_rw = BeePack->open('my.bee','my.bee.'.$$);
 
-  my %hash = bunpack($beepack); # TODO
+  $beepack_rw->set( key => $value ); # overwrite value
+
+  $beepack_rw->set_integer( key => $value ); # force integer
+  $beepack_rw->set_bool( key => $value ); # force bool
+  $beepack_rw->set_string( key => $value ); # force stringification
+  $beepack_rw->set_nil( 'key' ); # set nil value
+
+  $beepack_rw->set( key => [
+    BeePack->true, BeePack->true,
+  ]); # array of 2 true bool
+  $beepack_rw->set( key => {
+    false => BeePack->false,
+    true => BeePack->true,
+  }); # hash with true and false bool
+
+  $beepack_rw->save; # save changes and reopen
+
+  my $value = $beepack_ro->get('key');
 
 =head1 DESCRIPTION
 
-More to come... B<ALPHA>
+B<BeePack> is made out of the requirement to encapsule small key values and
+giant binary blobs into a compact file format for exchange and easy update
+even with the low amount of microcontroller memory.
+
+Technical B<BeePack> is B<CDB> which uses B<MsgPack> for storing the values.
+We picked B<MsgPack> for the inner storage, to not reinvent the wheel of
+storing interoperational values (like B<BeePack> generated on a Linux machine
+with x86 while being read by a microcontroller with ARM).
+
+For simplification we do NOT store several values for a key inside the B<CDB>,
+which is a capability of B<CDB>
+
+=head1 SEE ALSO
+
+=head2 L<CDB::TinyCDB>
+
+=head2 L<Data::MessagePack>
 
 =head1 SUPPORT
 
